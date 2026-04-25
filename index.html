@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Room Management System - Manage AC and Non-AC rooms, bookings, availability and pricing in one dashboard.">
+    <title>RoomDesk — Room Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============================================
+     HEADER
+     ============================================ -->
+<header>
+    <div class="header-inner">
+        <!-- Logo -->
+        <a href="#" class="logo">
+            <div class="logo-icon">🏨</div>
+            <div class="logo-text">
+                <span class="logo-title">RoomDesk</span>
+                <span class="logo-sub">Room Management System</span>
+            </div>
+        </a>
+
+        <!-- Live Stats in Header -->
+        <div class="header-stats">
+            <div class="stat-chip">
+                <span class="dot dot-green"></span>
+                <strong id="header-available">0</strong> Available
+            </div>
+            <div class="stat-chip">
+                <span class="dot dot-red"></span>
+                <strong id="header-booked">0</strong> Booked
+            </div>
+            <div class="stat-chip">
+                🏠 <strong id="header-total">0</strong> Total Rooms
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ============================================
+     MAIN CONTENT
+     ============================================ -->
+<main class="container">
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav" role="tablist">
+        <button class="tab-btn active" onclick="switchTab('rooms')" id="tab-rooms" aria-selected="true">
+            🏠 <span>All Rooms</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('book')" id="tab-book" aria-selected="false">
+            📝 <span>Book a Room</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('bookings')" id="tab-bookings" aria-selected="false">
+            📋 <span>Booking History</span>
+        </button>
+    </nav>
+
+    <!-- ==========================================
+         TAB 1: ALL ROOMS
+         ========================================== -->
+    <section class="tab-content active" id="tab-content-rooms">
+
+        <!-- Section Header + Filters -->
+        <div class="section-header">
+            <h1 class="section-title">All <span>Rooms</span></h1>
+            <div class="filter-bar">
+                <button class="filter-btn active" id="filter-all"       onclick="applyFilter('all')">All</button>
+                <button class="filter-btn"         id="filter-available" onclick="applyFilter('available')">✅ Available</button>
+                <button class="filter-btn"         id="filter-booked"   onclick="applyFilter('booked')">🔴 Booked</button>
+                <button class="filter-btn"         id="filter-ac"       onclick="applyFilter('ac')">❄️ AC</button>
+                <button class="filter-btn"         id="filter-nonac"    onclick="applyFilter('nonac')">🌬️ Non-AC</button>
+            </div>
+        </div>
+
+        <!-- Rooms Grid (populated by JS) -->
+        <div class="rooms-grid" id="rooms-grid">
+            <div class="loader">
+                <div class="spinner"></div> Loading rooms...
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 2: BOOKING FORM
+         ========================================== -->
+    <section class="tab-content" id="tab-content-book">
+        <div class="section-header">
+            <h2 class="section-title">Book a <span>Room</span></h2>
+        </div>
+
+        <div class="form-card">
+            <form id="booking-form" onsubmit="submitBooking(event)" novalidate>
+                <div class="form-grid">
+
+                    <!-- Select Room -->
+                    <div class="form-group full-width">
+                        <label for="select-room">Select Room</label>
+                        <select id="select-room" required onchange="onRoomOrTimeChange()">
+                            <option value="">— Choose an available room —</option>
+                        </select>
+                    </div>
+
+                    <!-- Customer Name -->
+                    <div class="form-group full-width">
+                        <label for="customer-name">Customer Name</label>
+                        <input
+                            type="text"
+                            id="customer-name"
+                            placeholder="e.g. Ramesh Kumar"
+                            required
+                            autocomplete="name"
+                        >
+                    </div>
+
+                    <!-- Start Time -->
+                    <div class="form-group">
+                        <label for="start-time">Check-In Time</label>
+                        <input
+                            type="datetime-local"
+                            id="start-time"
+                            required
+                            onchange="onRoomOrTimeChange()"
+                        >
+                    </div>
+
+                    <!-- End Time -->
+                    <div class="form-group">
+                        <label for="end-time">Check-Out Time</label>
+                        <input
+                            type="datetime-local"
+                            id="end-time"
+                            required
+                            onchange="onRoomOrTimeChange()"
+                        >
+                    </div>
+
+                    <!-- Price Preview -->
+                    <div class="form-group full-width">
+                        <div class="price-preview" id="price-preview">
+                            <div class="price-preview-label">Estimated Total Price</div>
+                            <div class="price-preview-amount" id="preview-amount">₹0</div>
+                            <div class="price-preview-detail" id="preview-detail"></div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-group full-width">
+                        <button type="submit" class="btn btn-primary btn-lg btn-full" id="book-btn">
+                            📝 Confirm Booking
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 3: BOOKING HISTORY
+         ========================================== -->
+    <section class="tab-content" id="tab-content-bookings">
+        <div class="section-header">
+            <h2 class="section-title">Booking <span>History</span></h2>
+            <button class="btn btn-secondary" onclick="loadBookings()">🔄 Refresh</button>
+        </div>
+
+        <div class="table-wrapper">
+            <div class="table-scroll">
+                <table id="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Room</th>
+                            <th>Type</th>
+                            <th>Customer</th>
+                            <th>Check-In</th>
+                            <th>Check-Out</th>
+                            <th>Total</th>
+                            <th>Booked On</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-tbody">
+                        <tr>
+                            <td colspan="8">
+                                <div class="loader"><div class="spinner"></div> Loading...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ============================================
+     CHECKOUT MODAL
+     ============================================ -->
+<div class="modal-overlay" id="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+        <h3 class="modal-title" id="modal-title">⚠️ Confirm Checkout</h3>
+        <p style="color: var(--text-secondary); font-size: 14px;" id="modal-body">
+            Are you sure you want to check out and mark this room as available?
+        </p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-danger"    style="flex:1" id="confirm-checkout-btn" onclick="confirmCheckout()">
+                ✅ Yes, Check Out
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     TOAST CONTAINER
+     ============================================ -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ============================================
+     FOOTER
+     ============================================ -->
+<footer>
+    <p>Built with ❤️ | <strong>RoomDesk</strong> — Room Management System &copy; 2025</p>
+</footer>
+
+<!-- Script -->
+<script src="script.js"></script>
+</body>
+</html>
